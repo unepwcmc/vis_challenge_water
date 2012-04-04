@@ -35,7 +35,8 @@ $(function() {
 	var options = {
 		chart: {
 			renderTo: 'graph',
-			type: 'area'
+			type: 'area',
+      animation: false
     },
 		title: {
 			text: null
@@ -137,22 +138,22 @@ $(function() {
 
     var current_groundwater_level = json['default_values']['groundwater_level'],
         current_groundwater_consumption_per_year = json['default_values']['groundwater_consumption_per_year'],
-        current_year = options.plotOptions.area.pointStart;
+        current_year = options.plotOptions.area.pointStart,
+        current_costs =  (json['default_values']['water_consumption_per_year'] - current_groundwater_consumption_per_year) * json['default_values']['other_water_consumption_cost_per_unit'];
 
     while(current_year < 2060) {
       // Push initial values
       groundwater_level.push(current_groundwater_level);
-      costs.push(0);
+      costs.push(current_costs);
 
       // Update values
       current_groundwater_level -= current_groundwater_consumption_per_year;
-      current_groundwater_level = Math.max(current_groundwater_level, 0)
+      current_groundwater_level = Math.max(current_groundwater_level, 0);
       current_year = current_year + 1;
     }
     // Last value could be less than 0
     groundwater_level.push(current_groundwater_level);
-    costs.push(0);
-
+    costs.push(current_costs);
 
     options.series[0].data = groundwater_level;
     options.series[1].data = costs;
