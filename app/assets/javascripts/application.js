@@ -21,9 +21,8 @@ $(function() {
       h = 500 - p[0] - p[2],
       x = d3.time.scale().range([0, w]),
       y = d3.scale.linear().range([h, 0]),
-      z = d3.scale.ordinal().range(["lightpink", "darkgray", "lightblue"]),
-      parse = d3.time.format("%m/%Y").parse,
-      format = d3.time.format("%b");
+      z = d3.scale.ordinal().range(["lightblue", "darkgray"]),
+      parse = d3.time.format("%Y").parse;
 
   var svg = d3.select("#graph").append("svg")
       .attr("width", w)
@@ -31,22 +30,45 @@ $(function() {
     .append("g")
       .attr("transform", "translate(" + p[3] + "," + p[0] + ")");
 
-  d3.csv("crimea.csv", function(crimea) {
+  d3.json("defaults.json", function(defaults) {
+    // Groundwater level
+    //var groundwater_level = [{x: parse('2011'), y: 2},{x: parse('2012'), y: 1},{x: parse('2013'), y: 1},{x: parse('2014'), y: 1},{x: parse('2015'), y: 1}];
+    var groundwater_level = [];
 
-    // Transpose the data into layers by cause.
-    var causes = d3.layout.stack()(["wounds", "other", "disease"].map(function(cause) {
-      return crimea.map(function(d) {
-        return {x: parse(d.date), y: +d[cause]};
-      });
-    }));
+    // Cost
+    //var cost = [{x: parse('2011'), y: 1},{x: parse('2012'), y: 2},{x: parse('2013'), y: 3},{x: parse('2014'), y: 4},{x: parse('2015'), y: 5}];
+    var cost = [];
+
+    // Loop years
+    for(var year in defaults) {
+      var current_groundwater_level = defaults[year]['groundwater_level'],
+          current_water_consumption_per_year = defaults[year]['water_consumption_per_year'],
+          current_year = parseInt(year);
+
+      while(current_groundwater_level > 0) {
+        // Push initial values
+        groundwater_level.push({x: parse('' + current_year), y: current_groundwater_level});
+        cost.push({x: parse('' + current_year), y: 0});
+
+        // Update values
+        current_groundwater_level -= current_water_consumption_per_year;
+        current_year = current_year + 1;
+      }
+      // Last value could be less than 0
+      groundwater_level.push({x: parse('' + current_year), y: current_groundwater_level});
+      cost.push({x: parse('' + current_year), y: 0});
+    }
+
+    // Transpose the data into layers.
+    var layers = d3.layout.stack()([groundwater_level, cost]);
 
     // Compute the x-domain (by date) and y-domain (by top).
-    x.domain([causes[0][0].x, causes[0][causes[0].length - 1].x]);
-    y.domain([0, d3.max(causes[causes.length - 1], function(d) { return d.y0 + d.y; })]);
+    x.domain([layers[0][0].x, layers[0][layers[0].length - 1].x]);
+    y.domain([0, d3.max(layers[layers.length - 1], function(d) { return d.y0 + d.y; })]);
 
     // Add an area for each cause.
     svg.selectAll("path.area")
-        .data(causes)
+        .data(layers)
       .enter().append("path")
         .attr("class", "area")
         .style("fill", function(d, i) { return z(i); })
@@ -57,7 +79,7 @@ $(function() {
 
     // Add a line for each cause.
     svg.selectAll("path.line")
-        .data(causes)
+        .data(layers)
       .enter().append("path")
         .attr("class", "line")
         .style("stroke", function(d, i) { return d3.rgb(z(i)).darker(); })
