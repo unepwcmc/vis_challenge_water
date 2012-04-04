@@ -57,4 +57,15 @@ default_run_options[:pty] = true # Must be set for the password prompt from git 
 #
 # The shared area is prepared with 'deploy:setup' and all the shared
 # items are symlinked in when the code is updated.
-set :local_shared_files, %w(config/database.yml)
+set :local_shared_files, %w(config/database.yml db/production.sqlite3)
+
+task :setup_production_database_configuration do
+  require 'yaml'
+  spec = { "production" => {
+    "adapter" => "sqlite3",
+    "database" => 'db/production.sqlite3',
+    "timeout" => 5000 }}
+    run "mkdir -p #{shared_path}/config"
+    put(spec.to_yaml, "#{shared_path}/config/database.yml")
+end
+after "deploy:setup", :setup_production_database_configuration
