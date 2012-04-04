@@ -12,106 +12,161 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require 'd3.v2'
+//= require 'highcharts.src.js'
 //= require_tree .
 
+var chart;
 $(function() {
-  var p = [20, 50, 30, 20],
-      w = 960 - p[1] - p[3],
-      h = 500 - p[0] - p[2],
-      x = d3.time.scale().range([0, w]),
-      y = d3.scale.linear().range([h, 0]),
-      z = d3.scale.ordinal().range(["lightblue", "darkgray"]),
-      parse = d3.time.format("%Y").parse;
+	// define the options
+	var options = {
+		chart: {
+			renderTo: 'graph'
+		},
 
-  var svg = d3.select("#graph").append("svg")
-      .attr("width", w)
-      .attr("height", h)
-    .append("g")
-      .attr("transform", "translate(" + p[3] + "," + p[0] + ")");
+		title: {
+			text: 'Daily visits at www.highcharts.com'
+		},
 
-  d3.json("defaults.json", function(defaults) {
-    // Groundwater level
-    //var groundwater_level = [{x: parse('2011'), y: 2},{x: parse('2012'), y: 1},{x: parse('2013'), y: 1},{x: parse('2014'), y: 1},{x: parse('2015'), y: 1}];
-    var groundwater_level = [];
+		subtitle: {
+			text: 'Source: Google Analytics'
+		},
 
-    // Cost
-    //var cost = [{x: parse('2011'), y: 1},{x: parse('2012'), y: 2},{x: parse('2013'), y: 3},{x: parse('2014'), y: 4},{x: parse('2015'), y: 5}];
-    var cost = [];
+		xAxis: {
+			labels: {
+				formatter: function() {
+					return this.value; // clean, unformatted number for year
+				}
+			}
+		},
 
-    // Loop years
-    for(var year in defaults) {
-      var current_groundwater_level = defaults[year]['groundwater_level'],
-          current_water_consumption_per_year = defaults[year]['water_consumption_per_year'],
-          current_year = parseInt(year);
+		yAxis: [{ // left y axis
+			title: {
+				text: null
+			},
+			labels: {
+				align: 'left',
+				x: 3,
+				y: 16,
+				formatter: function() {
+					return Highcharts.numberFormat(this.value, 0);
+				}
+			},
+			showFirstLabel: false
+		}, { // right y axis
+			linkedTo: 0,
+			gridLineWidth: 0,
+			opposite: true,
+			title: {
+				text: null
+			},
+			labels: {
+				align: 'right',
+				x: -3,
+				y: 16,
+				formatter: function() {
+					return Highcharts.numberFormat(this.value, 0);
+				}
+			},
+			showFirstLabel: false
+		}],
 
-      while(current_groundwater_level > 0) {
-        // Push initial values
-        groundwater_level.push({x: parse('' + current_year), y: current_groundwater_level});
-        cost.push({x: parse('' + current_year), y: 0});
+		legend: {
+			align: 'left',
+			verticalAlign: 'top',
+			y: 20,
+			floating: true,
+			borderWidth: 0
+		},
 
-        // Update values
-        current_groundwater_level -= current_water_consumption_per_year;
-        current_year = current_year + 1;
-      }
-      // Last value could be less than 0
-      groundwater_level.push({x: parse('' + current_year), y: current_groundwater_level});
-      cost.push({x: parse('' + current_year), y: 0});
-    }
+		tooltip: {
+			shared: true,
+			crosshairs: true
+		},
 
-    // Transpose the data into layers.
-    var layers = d3.layout.stack()([groundwater_level, cost]);
+		plotOptions: {
+			series: {
+				cursor: 'pointer',
+				point: {
+					events: {
+						click: function() {
+							hs.htmlExpand(null, {
+								pageOrigin: {
+									x: this.pageX,
+									y: this.pageY
+								},
+								headingText: this.series.name,
+								maincontentText: Highcharts.dateFormat('%A, %b %e, %Y', this.x) +':<br/> '+
+									this.y +' visits',
+								width: 200
+							});
+						}
+					}
+				},
+				marker: {
+					lineWidth: 1
+				}
+			}
+		},
 
-    // Compute the x-domain (by date) and y-domain (by top).
-    x.domain([layers[0][0].x, layers[0][layers[0].length - 1].x]);
-    y.domain([0, d3.max(layers[layers.length - 1], function(d) { return d.y0 + d.y; })]);
+		series: [{
+			name: 'Waterground level',
+			lineWidth: 4,
+			marker: {
+				radius: 4
+			}
+		}, {
+			name: 'Costs'
+		}]
+	};
 
-    // Add an area for each cause.
-    svg.selectAll("path.area")
-        .data(layers)
-      .enter().append("path")
-        .attr("class", "area")
-        .style("fill", function(d, i) { return z(i); })
-        .attr("d", d3.svg.area()
-        .x(function(d) { return x(d.x); })
-        .y0(function(d) { return y(d.y0); })
-        .y1(function(d) { return y(d.y0 + d.y); }));
+	// Load data asynchronously using jQuery. On success, add the data
+	// to the options and initiate the chart.
+	// This data is obtained by exporting a GA custom report to TSV.
+	// http://api.jquery.com/jQuery.get/
+	$.get('analytics.tsv', null, function(tsv, state, xhr) {
+		var lines = [],
+			listen = false,
+			date,
 
-    // Add a line for each cause.
-    svg.selectAll("path.line")
-        .data(layers)
-      .enter().append("path")
-        .attr("class", "line")
-        .style("stroke", function(d, i) { return d3.rgb(z(i)).darker(); })
-        .attr("d", d3.svg.line()
-        .x(function(d) { return x(d.x); })
-        .y(function(d) { return y(d.y0 + d.y); }));
+			// set up the two data series
+			allVisits = [],
+			newVisitors = [];
 
-    // Add a label per date.
-    svg.selectAll("text")
-        .data(x.ticks(12))
-      .enter().append("text")
-        .attr("x", x)
-        .attr("y", h + 6)
-        .attr("text-anchor", "middle")
-        .attr("dy", ".71em")
-        .text(x.tickFormat(12));
+		// inconsistency
+		if (typeof tsv !== 'string') {
+			tsv = xhr.responseText;
+		}
 
-    // Add y-axis rules.
-    var rule = svg.selectAll("g.rule")
-        .data(y.ticks(5))
-      .enter().append("g")
-        .attr("class", "rule")
-        .attr("transform", function(d) { return "translate(0," + y(d) + ")"; });
+		// split the data return into lines and parse them
+		tsv = tsv.split(/\n/g);
+		jQuery.each(tsv, function(i, line) {
 
-    rule.append("line")
-        .attr("x2", w)
-        .style("stroke", function(d) { return d ? "#fff" : "#000"; })
-        .style("stroke-opacity", function(d) { return d ? .7 : null; });
+			// listen for data lines between the Graph and Table headers
+			if (tsv[i - 3] == '# Graph') {
+				listen = true;
+			} else if (line == '' || line.charAt(0) == '#') {
+				listen = false;
+			}
 
-    rule.append("text")
-        .attr("x", w + 6)
-        .attr("dy", ".35em")
-        .text(d3.format(",d"));
-  });
+			// all data lines start with a double quote
+			if (listen) {
+				line = line.split(/\t/);
+				date = Date.parse(line[0] +' UTC');
+
+				allVisits.push([
+					date,
+					parseInt(line[1].replace(',', ''), 10)
+				]);
+				newVisitors.push([
+					date,
+					parseInt(line[2].replace(',', ''), 10)
+				]);
+			}
+		});
+
+		options.series[0].data = allVisits;
+		options.series[1].data = newVisitors;
+
+		chart = new Highcharts.Chart(options);
+	});
 });
