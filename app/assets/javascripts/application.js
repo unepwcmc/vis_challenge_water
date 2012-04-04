@@ -56,8 +56,8 @@ $(function() {
 				x: 3,
 				y: 16,
 				formatter: function() {
-          return Highcharts.numberFormat(this.value, 0);
-					//return this.value / 1000000 +'M';
+          //return Highcharts.numberFormat(this.value, 0);
+					return this.value / 1000000 +'M';
 				}
 			},
 			showFirstLabel: false
@@ -73,15 +73,16 @@ $(function() {
 				x: -3,
 				y: 16,
 				formatter: function() {
-					return Highcharts.numberFormat(this.value, 0);
+					//return Highcharts.numberFormat(this.value, 0);
+          return this.value / 1000000 +'M';
 				}
 			},
 			showFirstLabel: false
 		}],
 		tooltip: {
 			formatter: function() {
-				return this.series.name +' produced <b>'+
-					Highcharts.numberFormat(this.y, 0) +'</b><br/>warheads in '+ this.x;
+				return '<b>'+ this.series.name +'</b><br/>'+
+					this.x +': '+ this.y / 1000000 + 'M';
 			}
 		},
 		plotOptions: {
@@ -145,6 +146,7 @@ $(function() {
 
       // Update values
       current_groundwater_level -= current_groundwater_consumption_per_year;
+      current_groundwater_level = Math.max(current_groundwater_level, 0)
       current_year = current_year + 1;
     }
     // Last value could be less than 0
