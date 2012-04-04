@@ -1,1 +1,21 @@
-<div id="graph"></div>
+<div class="row-fluid">
+  <div class="span3">
+    <div class="well">
+      <h3>Water consumption</h3>
+      <p>
+        <label for='source-percentage'>Groundwater reserves</label>
+        <span id="source-percentage" style="border:0; color:#f6931f; font-weight:bold;" />
+      </p>
+      <div id='source-slider'></div>
+    </div>
+  </div>
+  <div class="span9">
+    <% flash.each do |name, msg| %>
+      <%= content_tag :div, :class => "alert #{name == :error ? "alert-error" : "alert-success" }" do %>
+        <a class="close" data-dismiss="alert" href="#">×</a>
+        <%= msg %>
+      <% end %>
+    <% end %>
+    <div id="graph"></div>
+  </div>
+</div>

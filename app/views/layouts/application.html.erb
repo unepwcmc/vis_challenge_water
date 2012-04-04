@@ -37,39 +37,7 @@
     </div>
   </div>
   <div class="container-fluid">
-    <div class="row-fluid">
-      <div class="span3">
-        <div class="well sidebar-nav">
-          <ul class="nav nav-list">
-            <li class="nav-header">Sidebar</li>
-            <li class="active"><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li class="nav-header">Sidebar</li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li class="nav-header">Sidebar</li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-            <li><a href="#">Link</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="span9">
-        <% flash.each do |name, msg| %>
-          <%= content_tag :div, :class => "alert #{name == :error ? "alert-error" : "alert-success" }" do %>
-            <a class="close" data-dismiss="alert" href="#">×</a>
-            <%= msg %>
-          <% end %>
-        <% end %>
-        <%= yield %>
-      </div>
-    </div>
+    <%= yield %>
     <hr>
     <footer>
       <p>&copy; Company 2012</p>
