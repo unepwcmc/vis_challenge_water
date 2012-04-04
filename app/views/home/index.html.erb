@@ -1,14 +1,25 @@
 <div class="row-fluid">
   <div class="span3">
     <div class="well">
+      <h2>Groundwater reserves value</h2>
       <h3>Water consumption</h3>
-      <p><strong>Total per year (m3):</strong> <span id='total-water' data-value='4000000000'>4.0 billion m3</span></p>
-      <p><strong>Total from groundwater reserves per year:</strong> <span id="total-from-groundwater" /></p>
-      <h4>Source</h4>
+      <p><strong>Per year (m3):</strong> <span id='total-water' data-value='4000000000'>4.0 billion m3</span></p>
+      <p><strong>From groundwater reserves per year:</strong> <span id="total-from-groundwater"></span> m3</p>
+        <p><strong>From other sources per year:</strong> <span id="total-from-other"></span> m3</p>
+      <hr />
+      <h3>Source</h3>
       <p>
-        <label>From groundwater reserves: <span id="source-percentage" style="border:0; color:#f6931f; font-weight:bold;" /></label>
+        <label>From groundwater reserves: <span id="ground-percentage" style="border:0; color:#f6931f; font-weight:bold;" /></label>
+        <label>From other sources: <span id="other-percentage" style="border:0; color:#f6931f; font-weight:bold;" /></label>
       </p>
-      <div id='source-slider'></div>
+      <div id='ground-slider'></div>
+      <hr />
+      <h3>Costs</h3>
+      <p><strong>Total water cost from other sources:</strong> <span id='total-other-cost'></span></p>
+      <p>
+        <strong>Water cost per unit from other sources:</strong>
+        <input type='number' id='other-unit-cost' class='input-small'/>
+      </p>
     </div>
   </div>
   <div class="span9">

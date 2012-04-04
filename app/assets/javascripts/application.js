@@ -161,21 +161,37 @@ $(function() {
   }
 
   function updateUserInputs(){
-    $( "#source-slider" ).slider({
+    $( "#ground-slider" ).slider({
       range: "min",
       min: 0,
       max: 100,
       value: window.userInputs.getter("groundwater_consumption_per_year")/window.userInputs.getter("water_consumption_per_year") * 100,
       slide: function(event, ui) {
-        $("#source-percentage").text(ui.value + "%");
+        $("#ground-percentage").text(ui.value + "%");
         $("#total-from-groundwater").text($("#total-water").data('value') * (ui.value/100));
+        $("#other-percentage").text((100-ui.value) + "%");
+        $("#total-from-other").text($("#total-water").data('value') * ((100-ui.value)/100));
       },
       stop: function(event, ui) {
         window.userInputs.setter('groundwater_consumption_per_year', ui.value/100 * window.userInputs.getter("water_consumption_per_year"));
       }
     });
-    $( "#source-percentage" ).text($('#source-slider').slider('value') + "%");
     $("#total-water").data('value', userInputs.getter("water_consumption_per_year"));
-    $("#total-from-groundwater").text($("#total-water").data('value') * ($("#source-slider").slider('value')/100));
+    $("#total-from-groundwater").text($("#total-water").data('value') * ($("#ground-slider").slider('value')/100));
+    $( "#ground-percentage" ).text($('#ground-slider').slider('value') + "%");
+    $("#total-from-other").text($("#total-water").data('value') * ((100-$("#ground-slider").slider('value'))/100));
+    $("#other-percentage").text((100-$('#ground-slider').slider('value')) + "%");
+    $("#other-unit-cost").val(window.userInputs.getter("other_water_consumption_cost_per_unit"));
+    updateTotalCost();
   };
+
+  function updateTotalCost(){
+    $("#total-other-cost").text($("#total-other").text()*$("#other-unit-cost").text());
+  };
+
+  $("#other-unit-cost").blur(function(e){
+    e.preventDefault();
+    window.userInputs.setter('other_water_consumption_cost_per_unit', $(this).val());
+    updateTotalCost();
+  });
 });
