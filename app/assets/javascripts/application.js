@@ -14,23 +14,22 @@
 //= require jquery_ujs
 //= require jquery-ui
 //= require 'highcharts.src.js'
+//= require underscore
 //= require_tree .
 
 var chart;
 $(function() {
   // User input values
-  var user_inputs = {
-    year: 2012,
-    default_values: {
-      "population":7511690,
-      "groundwater_level":155520000000,
-      "water_consumption_per_year":4000000000,
-      "groundwater_consumption_per_year":3240000000
+  var userInputs = {
+    // year
+    // default_values
+    getter: function(key) {
+      return this.default_values[key];
     },
     setter: function(key, value) {
-      this.default_values[key] = value;
+      return this.default_values[key] = value;
     }
-  }
+  };
   
 	// Chart options
 	var options = {
@@ -111,11 +110,22 @@ $(function() {
 	// This data is obtained by exporting a GA custom report to TSV.
 	// http://api.jquery.com/jQuery.get/
 	$.get('defaults.json', null, function(data, textStatus, jqXHR) {
+    var json;
 		if (typeof data !== 'string') {
 			data = jqXHR.responseText;
 		}
 
-    updateChart(JSON.parse(data));
+    // Parse data
+    json = JSON.parse(data)
+
+    // Update chart
+    updateChart(json);
+
+    // Store values on global variable
+    _.extend(userInputs, json);
+
+    // Update user inputs
+    updateUserInputs();
 	});
 
   function updateChart(json) {

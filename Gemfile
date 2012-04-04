@@ -35,6 +35,7 @@ gem 'jquery-rails'
 gem 'capistrano'
 gem 'brightbox'
 gem 'bootstrap-generators'
+gem 'underscore-rails'
 
 # To use debugger
 # gem 'ruby-debug19', :require => 'ruby-debug'
