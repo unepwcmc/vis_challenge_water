@@ -34,7 +34,6 @@ gem 'jquery-rails'
 # Deploy with Capistrano
 gem 'capistrano'
 gem 'brightbox'
-gem 'simple_form'
 gem 'bootstrap-generators'
 
 # To use debugger
