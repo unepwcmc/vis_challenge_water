@@ -18,20 +18,29 @@
 
 var chart;
 $(function() {
-	// define the options
+  // User input values
+  var user_inputs = {
+    year: 2012,
+    default_values: {
+      "population":7511690,
+      "groundwater_level":155520000000,
+      "water_consumption_per_year":4000000000,
+      "groundwater_consumption_per_year":3240000000
+    },
+    setter: function(key, value) {
+      this.default_values[key] = value;
+    }
+  }
+  
+	// Chart options
 	var options = {
 		chart: {
-			renderTo: 'graph'
-		},
-
+			renderTo: 'graph',
+			type: 'area'
+    },
 		title: {
-			text: 'Daily visits at www.highcharts.com'
+			text: null
 		},
-
-		subtitle: {
-			text: 'Source: Google Analytics'
-		},
-
 		xAxis: {
 			labels: {
 				formatter: function() {
@@ -39,17 +48,17 @@ $(function() {
 				}
 			}
 		},
-
-		yAxis: [{ // left y axis
+		yAxis: [{
 			title: {
 				text: null
 			},
 			labels: {
-				align: 'left',
+        align: 'left',
 				x: 3,
 				y: 16,
 				formatter: function() {
-					return Highcharts.numberFormat(this.value, 0);
+          return Highcharts.numberFormat(this.value, 0);
+					//return this.value / 1000000 +'M';
 				}
 			},
 			showFirstLabel: false
@@ -70,51 +79,28 @@ $(function() {
 			},
 			showFirstLabel: false
 		}],
-
-		legend: {
-			align: 'left',
-			verticalAlign: 'top',
-			y: 20,
-			floating: true,
-			borderWidth: 0
-		},
-
 		tooltip: {
-			shared: true,
-			crosshairs: true
+			formatter: function() {
+				return this.series.name +' produced <b>'+
+					Highcharts.numberFormat(this.y, 0) +'</b><br/>warheads in '+ this.x;
+			}
 		},
-
 		plotOptions: {
-			series: {
-				cursor: 'pointer',
-				point: {
-					events: {
-						click: function() {
-							hs.htmlExpand(null, {
-								pageOrigin: {
-									x: this.pageX,
-									y: this.pageY
-								},
-								headingText: this.series.name,
-								maincontentText: Highcharts.dateFormat('%A, %b %e, %Y', this.x) +':<br/> '+
-									this.y +' visits',
-								width: 200
-							});
+			area: {
+				marker: {
+					enabled: false,
+					symbol: 'circle',
+					radius: 2,
+					states: {
+						hover: {
+							enabled: true
 						}
 					}
-				},
-				marker: {
-					lineWidth: 1
 				}
 			}
 		},
-
 		series: [{
-			name: 'Groundwater level',
-			lineWidth: 4,
-			marker: {
-				radius: 4
-			}
+			name: 'Groundwater level'
 		}, {
 			name: 'Costs'
 		}]
@@ -125,40 +111,40 @@ $(function() {
 	// This data is obtained by exporting a GA custom report to TSV.
 	// http://api.jquery.com/jQuery.get/
 	$.get('defaults.json', null, function(data, textStatus, jqXHR) {
-		var defaults,
-			// set up the two data series
-			groundwater_level = [], costs = [];
-
-		// inconsistency
 		if (typeof data !== 'string') {
 			data = jqXHR.responseText;
 		}
 
-    // Parse response
-    defaults = JSON.parse(data);
-
-    for(var year in defaults) {
-      var current_groundwater_level = defaults[year]['groundwater_level'],
-          current_groundwater_consumption_per_year = defaults[year]['groundwater_consumption_per_year'],
-          current_year = parseInt(year);
-
-      while(current_groundwater_level > 0) {
-        // Push initial values
-        groundwater_level.push([Date.parse('' + current_year), current_groundwater_level]);
-        costs.push([Date.parse('' + current_year), 0]);
-
-        // Update values
-        current_groundwater_level -= current_groundwater_consumption_per_year;
-        current_year = current_year + 1;
-      }
-      // Last value could be less than 0
-      groundwater_level.push([Date.parse('' + current_year), current_groundwater_level]);
-      costs.push([Date.parse('' + current_year), 0]);
-    }
-
-		options.series[0].data = groundwater_level;
-		options.series[1].data = costs;
-
-		chart = new Highcharts.Chart(options);
+    updateChart(JSON.parse(data));
 	});
+
+  function updateChart(json) {
+		var groundwater_level = [], costs = [];
+
+    // Get starting year
+    options.plotOptions.area.pointStart = parseInt(json['year']);
+
+    var current_groundwater_level = json['default_values']['groundwater_level'],
+        current_groundwater_consumption_per_year = json['default_values']['groundwater_consumption_per_year'],
+        current_year = options.plotOptions.area.pointStart;
+
+    while(current_groundwater_level > 0) {
+      // Push initial values
+      groundwater_level.push(current_groundwater_level);
+      costs.push(0);
+
+      // Update values
+      current_groundwater_level -= current_groundwater_consumption_per_year;
+      current_year = current_year + 1;
+    }
+    // Last value could be less than 0
+    groundwater_level.push(current_groundwater_level);
+    costs.push(0);
+
+
+    options.series[0].data = groundwater_level;
+    options.series[1].data = costs;
+
+    chart = new Highcharts.Chart(options);
+  }
 });
