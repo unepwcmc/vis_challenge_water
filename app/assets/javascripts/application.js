@@ -172,6 +172,7 @@ $(function() {
         $("#total-from-groundwater").text($("#total-water").data('value') * (ui.value/100));
         $("#other-percentage").text((100-ui.value) + "%");
         $("#total-from-other").text($("#total-water").data('value') * ((100-ui.value)/100));
+        updateTotalCost();
       },
       stop: function(event, ui) {
         window.userInputs.setter('groundwater_consumption_per_year', ui.value/100 * window.userInputs.getter("water_consumption_per_year"));
@@ -187,12 +188,21 @@ $(function() {
   };
 
   function updateTotalCost(){
-    $("#total-other-cost").text($("#total-other").text()*$("#other-unit-cost").text());
+    $("#total-other-cost").text(window.userInputs.getter('water_consumption_per_year')* ((100-$("#ground-slider").slider('value'))/100) * window.userInputs.getter('other_water_consumption_cost_per_unit'));
   };
 
+  function updateUnitCost(el){
+    window.userInputs.setter('other_water_consumption_cost_per_unit', $(el).val());
+    updateTotalCost();
+  }
   $("#other-unit-cost").blur(function(e){
     e.preventDefault();
-    window.userInputs.setter('other_water_consumption_cost_per_unit', $(this).val());
-    updateTotalCost();
+    updateUnitCost(this);
+  });
+  $("#other-unit-cost").keyup(function(e){
+    var code = e.keyCode ? e.keyCode : e.which;
+    if(code === 13){
+      updateUnitCost(this);
+    }
   });
 });
