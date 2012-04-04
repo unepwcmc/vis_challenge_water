@@ -19,3 +19,8 @@ Other impacts:
 
 How they impact:
   - Variation of groundwater Level
+
+Data for United Arab Emirates (from World Bank):
+  - Population: 7.511.690
+  - Total Annual freshwater withdrawals: 4.0 billion cubic meters
+  - Percentage of total annual freshwater withdrawals from groundwater reserves: 81%
