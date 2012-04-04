@@ -1,7 +1,10 @@
 class HomeController < ApplicationController
   def index
   end
-  
+
+  def about
+  end
+
   def defaults
     render json: {
       'year' => 2012, # current year
