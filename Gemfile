@@ -34,6 +34,7 @@ gem 'jquery-rails'
 # Deploy with Capistrano
 gem 'capistrano'
 gem 'brightbox'
+gem 'bootstrap-generators'
 
 # To use debugger
 # gem 'ruby-debug19', :require => 'ruby-debug'
