@@ -109,7 +109,7 @@ $(function() {
 		},
 
 		series: [{
-			name: 'Waterground level',
+			name: 'Groundwater level',
 			lineWidth: 4,
 			marker: {
 				radius: 4
@@ -123,49 +123,40 @@ $(function() {
 	// to the options and initiate the chart.
 	// This data is obtained by exporting a GA custom report to TSV.
 	// http://api.jquery.com/jQuery.get/
-	$.get('analytics.tsv', null, function(tsv, state, xhr) {
-		var lines = [],
-			listen = false,
-			date,
-
+	$.get('defaults.json', null, function(data, textStatus, jqXHR) {
+		var defaults,
 			// set up the two data series
-			allVisits = [],
-			newVisitors = [];
+			groundwater_level = [], costs = [];
 
 		// inconsistency
-		if (typeof tsv !== 'string') {
-			tsv = xhr.responseText;
+		if (typeof data !== 'string') {
+			data = jqXHR.responseText;
 		}
 
-		// split the data return into lines and parse them
-		tsv = tsv.split(/\n/g);
-		jQuery.each(tsv, function(i, line) {
+    // Parse response
+    defaults = JSON.parse(data);
 
-			// listen for data lines between the Graph and Table headers
-			if (tsv[i - 3] == '# Graph') {
-				listen = true;
-			} else if (line == '' || line.charAt(0) == '#') {
-				listen = false;
-			}
+    for(var year in defaults) {
+      var current_groundwater_level = defaults[year]['groundwater_level'],
+          current_groundwater_consumption_per_year = defaults[year]['groundwater_consumption_per_year'],
+          current_year = parseInt(year);
 
-			// all data lines start with a double quote
-			if (listen) {
-				line = line.split(/\t/);
-				date = Date.parse(line[0] +' UTC');
+      while(current_groundwater_level > 0) {
+        // Push initial values
+        groundwater_level.push([Date.parse('' + current_year), current_groundwater_level]);
+        costs.push([Date.parse('' + current_year), 0]);
 
-				allVisits.push([
-					date,
-					parseInt(line[1].replace(',', ''), 10)
-				]);
-				newVisitors.push([
-					date,
-					parseInt(line[2].replace(',', ''), 10)
-				]);
-			}
-		});
+        // Update values
+        current_groundwater_level -= current_groundwater_consumption_per_year;
+        current_year = current_year + 1;
+      }
+      // Last value could be less than 0
+      groundwater_level.push([Date.parse('' + current_year), current_groundwater_level]);
+      costs.push([Date.parse('' + current_year), 0]);
+    }
 
-		options.series[0].data = allVisits;
-		options.series[1].data = newVisitors;
+		options.series[0].data = groundwater_level;
+		options.series[1].data = costs;
 
 		chart = new Highcharts.Chart(options);
 	});
