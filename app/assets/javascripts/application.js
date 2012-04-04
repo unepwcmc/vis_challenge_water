@@ -20,9 +20,7 @@
 var chart;
 $(function() {
   // User input values
-  var userInputs = {
-    // year
-    // default_values
+  window.userInputs = {
     getter: function(key) {
       return this.default_values[key];
     },
@@ -163,10 +161,11 @@ $(function() {
       range: "min",
       min: 0,
       max: 100,
-      value: userInputs.getter("water_consumption_per_year")/userInputs.getter("groundwater_consumption_per_year"),
-      slide: function( event, ui ) {
-        $( "#source-percentage" ).text(ui.value + "%");
+      value: window.userInputs.getter("groundwater_consumption_per_year")/window.userInputs.getter("water_consumption_per_year") * 100,
+      slide: function(event, ui) {
+        $("#source-percentage").text(ui.value + "%");
         $("#total-from-groundwater").text($("#total-water").data('value') * (ui.value/100));
+        window.userInputs.setter('groundwater_consumption_per_year', ui.value * window.userInputs.getter("water_consumption_per_year"));
       }
     });
     $( "#source-percentage" ).text($('#source-slider').slider('value') + "%");
