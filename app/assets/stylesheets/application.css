@@ -9,5 +9,6 @@
  * compiled file, but it's generally better to create a new file per style scope.
  *
  *= require_self
+ *= require 'smoothness/jquery-ui-1.8.18.custom'
  *= require_tree .
 */
