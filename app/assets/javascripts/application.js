@@ -25,7 +25,9 @@ $(function() {
       return this.default_values[key];
     },
     setter: function(key, value) {
-      return this.default_values[key] = value;
+      this.default_values[key] = value;
+      updateChart(this);
+      return this.default_values[key];
     }
   };
   
@@ -136,7 +138,7 @@ $(function() {
         current_groundwater_consumption_per_year = json['default_values']['groundwater_consumption_per_year'],
         current_year = options.plotOptions.area.pointStart;
 
-    while(current_groundwater_level > 0) {
+    while(current_year < 2060) {
       // Push initial values
       groundwater_level.push(current_groundwater_level);
       costs.push(0);
@@ -165,7 +167,9 @@ $(function() {
       slide: function(event, ui) {
         $("#source-percentage").text(ui.value + "%");
         $("#total-from-groundwater").text($("#total-water").data('value') * (ui.value/100));
-        window.userInputs.setter('groundwater_consumption_per_year', ui.value * window.userInputs.getter("water_consumption_per_year"));
+      },
+      stop: function(event, ui) {
+        window.userInputs.setter('groundwater_consumption_per_year', ui.value/100 * window.userInputs.getter("water_consumption_per_year"));
       }
     });
     $( "#source-percentage" ).text($('#source-slider').slider('value') + "%");

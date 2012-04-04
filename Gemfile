@@ -34,7 +34,8 @@ gem 'jquery-rails'
 # Deploy with Capistrano
 gem 'capistrano'
 gem 'brightbox'
-gem 'bootstrap-generators'
+#gem 'bootstrap-generators'
+gem 'bootstrap-generators', '~> 2.0', :git => 'git://github.com/decioferreira/bootstrap-generators.git'
 gem 'underscore-rails'
 
 # To use debugger
