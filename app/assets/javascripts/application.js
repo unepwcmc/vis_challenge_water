@@ -13,84 +13,161 @@
 //= require jquery
 //= require jquery_ujs
 //= require jquery-ui
-//= require 'd3.v2'
+//= require 'highcharts.src.js'
 //= require_tree .
 
+var chart;
 $(function() {
-  var p = [20, 50, 30, 20],
-      w = 960 - p[1] - p[3],
-      h = 500 - p[0] - p[2],
-      x = d3.time.scale().range([0, w]),
-      y = d3.scale.linear().range([h, 0]),
-      z = d3.scale.ordinal().range(["lightpink", "darkgray", "lightblue"]),
-      parse = d3.time.format("%m/%Y").parse,
-      format = d3.time.format("%b");
+	// define the options
+	var options = {
+		chart: {
+			renderTo: 'graph'
+		},
 
-  var svg = d3.select("#graph").append("svg")
-      .attr("width", w)
-      .attr("height", h)
-    .append("g")
-      .attr("transform", "translate(" + p[3] + "," + p[0] + ")");
+		title: {
+			text: 'Daily visits at www.highcharts.com'
+		},
 
-  d3.csv("crimea.csv", function(crimea) {
+		subtitle: {
+			text: 'Source: Google Analytics'
+		},
 
-    // Transpose the data into layers by cause.
-    var causes = d3.layout.stack()(["wounds", "other", "disease"].map(function(cause) {
-      return crimea.map(function(d) {
-        return {x: parse(d.date), y: +d[cause]};
-      });
-    }));
+		xAxis: {
+			labels: {
+				formatter: function() {
+					return this.value; // clean, unformatted number for year
+				}
+			}
+		},
 
-    // Compute the x-domain (by date) and y-domain (by top).
-    x.domain([causes[0][0].x, causes[0][causes[0].length - 1].x]);
-    y.domain([0, d3.max(causes[causes.length - 1], function(d) { return d.y0 + d.y; })]);
+		yAxis: [{ // left y axis
+			title: {
+				text: null
+			},
+			labels: {
+				align: 'left',
+				x: 3,
+				y: 16,
+				formatter: function() {
+					return Highcharts.numberFormat(this.value, 0);
+				}
+			},
+			showFirstLabel: false
+		}, { // right y axis
+			linkedTo: 0,
+			gridLineWidth: 0,
+			opposite: true,
+			title: {
+				text: null
+			},
+			labels: {
+				align: 'right',
+				x: -3,
+				y: 16,
+				formatter: function() {
+					return Highcharts.numberFormat(this.value, 0);
+				}
+			},
+			showFirstLabel: false
+		}],
 
-    // Add an area for each cause.
-    svg.selectAll("path.area")
-        .data(causes)
-      .enter().append("path")
-        .attr("class", "area")
-        .style("fill", function(d, i) { return z(i); })
-        .attr("d", d3.svg.area()
-        .x(function(d) { return x(d.x); })
-        .y0(function(d) { return y(d.y0); })
-        .y1(function(d) { return y(d.y0 + d.y); }));
+		legend: {
+			align: 'left',
+			verticalAlign: 'top',
+			y: 20,
+			floating: true,
+			borderWidth: 0
+		},
 
-    // Add a line for each cause.
-    svg.selectAll("path.line")
-        .data(causes)
-      .enter().append("path")
-        .attr("class", "line")
-        .style("stroke", function(d, i) { return d3.rgb(z(i)).darker(); })
-        .attr("d", d3.svg.line()
-        .x(function(d) { return x(d.x); })
-        .y(function(d) { return y(d.y0 + d.y); }));
+		tooltip: {
+			shared: true,
+			crosshairs: true
+		},
 
-    // Add a label per date.
-    svg.selectAll("text")
-        .data(x.ticks(12))
-      .enter().append("text")
-        .attr("x", x)
-        .attr("y", h + 6)
-        .attr("text-anchor", "middle")
-        .attr("dy", ".71em")
-        .text(x.tickFormat(12));
+		plotOptions: {
+			series: {
+				cursor: 'pointer',
+				point: {
+					events: {
+						click: function() {
+							hs.htmlExpand(null, {
+								pageOrigin: {
+									x: this.pageX,
+									y: this.pageY
+								},
+								headingText: this.series.name,
+								maincontentText: Highcharts.dateFormat('%A, %b %e, %Y', this.x) +':<br/> '+
+									this.y +' visits',
+								width: 200
+							});
+						}
+					}
+				},
+				marker: {
+					lineWidth: 1
+				}
+			}
+		},
 
-    // Add y-axis rules.
-    var rule = svg.selectAll("g.rule")
-        .data(y.ticks(5))
-      .enter().append("g")
-        .attr("class", "rule")
-        .attr("transform", function(d) { return "translate(0," + y(d) + ")"; });
+		series: [{
+			name: 'Waterground level',
+			lineWidth: 4,
+			marker: {
+				radius: 4
+			}
+		}, {
+			name: 'Costs'
+		}]
+	};
 
-    rule.append("line")
-        .attr("x2", w)
-        .style("stroke", function(d) { return d ? "#fff" : "#000"; })
-        .style("stroke-opacity", function(d) { return d ? .7 : null; });
+	// Load data asynchronously using jQuery. On success, add the data
+	// to the options and initiate the chart.
+	// This data is obtained by exporting a GA custom report to TSV.
+	// http://api.jquery.com/jQuery.get/
+	$.get('analytics.tsv', null, function(tsv, state, xhr) {
+		var lines = [],
+			listen = false,
+			date,
 
-    rule.append("text")
-        .attr("x", w + 6)
-        .attr("dy", ".35em")
-        .text(d3.format(",d"));
-  });
+			// set up the two data series
+			allVisits = [],
+			newVisitors = [];
+
+		// inconsistency
+		if (typeof tsv !== 'string') {
+			tsv = xhr.responseText;
+		}
+
+		// split the data return into lines and parse them
+		tsv = tsv.split(/\n/g);
+		jQuery.each(tsv, function(i, line) {
+
+			// listen for data lines between the Graph and Table headers
+			if (tsv[i - 3] == '# Graph') {
+				listen = true;
+			} else if (line == '' || line.charAt(0) == '#') {
+				listen = false;
+			}
+
+			// all data lines start with a double quote
+			if (listen) {
+				line = line.split(/\t/);
+				date = Date.parse(line[0] +' UTC');
+
+				allVisits.push([
+					date,
+					parseInt(line[1].replace(',', ''), 10)
+				]);
+				newVisitors.push([
+					date,
+					parseInt(line[2].replace(',', ''), 10)
+				]);
+			}
+		});
+
+		options.series[0].data = allVisits;
+		options.series[1].data = newVisitors;
+
+		chart = new Highcharts.Chart(options);
+	});
 });
